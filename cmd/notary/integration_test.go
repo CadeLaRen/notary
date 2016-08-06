@@ -1167,22 +1167,15 @@ func TestClientKeyGenerationRotation(t *testing.T) {
 	// publish using the new keys
 	output := assertSuccessfullyPublish(
 		t, tempDir, server.URL, "gun", target+"2", tempfiles[1])
-	// assert that the previous target is sitll there
+	// assert that the previous target is still there
 	require.True(t, strings.Contains(string(output), target))
-}
 
-// Helper method to get the subdirectory for TUF keys
-func getKeySubdir(role, gun string) string {
-	subdir := notary.PrivDir
-	switch role {
-	case data.CanonicalRootRole:
-		return filepath.Join(subdir, notary.RootKeysSubdir)
-	case data.CanonicalTargetsRole:
-		return filepath.Join(subdir, notary.NonRootKeysSubdir, gun)
-	case data.CanonicalSnapshotRole:
-		return filepath.Join(subdir, notary.NonRootKeysSubdir, gun)
-	default:
-		return filepath.Join(subdir, notary.NonRootKeysSubdir)
+	// rotate the snapshot and timestamp keys on the server, multiple times
+	for i := 0; i < 10; i++ {
+		_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalSnapshotRole, "-r")
+		require.NoError(t, err)
+		_, err = runCommand(t, tempDir, "-s", server.URL, "key", "rotate", "gun", data.CanonicalTimestampRole, "-r")
+		require.NoError(t, err)
 	}
 }
 
